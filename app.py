@@ -8,39 +8,50 @@ ShopSmart Analytics - Flask web app serving the shopping analytics dashboard.
     open http://127.0.0.1:5000
 """
 
-import os
 import numpy as np
 from flask import Flask, jsonify, render_template, request
 
-import generate_data
-from ml_models import train_all, SVM_FEATURES, TREE_FEATURES, ANN_FEATURES
+from ml_models import SVM_FEATURES, TREE_FEATURES, ANN_FEATURES
+from runtime import get_runtime
 
-if not os.path.exists(os.path.join(generate_data.DATA_DIR, "customers.csv")):
-    generate_data.main()
-
-print("Training models...")
-M = train_all()
-D = M["data"]
-print("Models ready.")
+M, D, SCORES = get_runtime()
 
 app = Flask(__name__)
-
-
-def customer_scores():
-    """Run every customer through SVM, Decision Tree and ANN."""
-    c = D["customers"].copy()
-    c["svm_purchase"] = M["svm"].model.predict(c[SVM_FEATURES])
-    c["promo_prob"] = M["tree"].model.predict_proba(c[TREE_FEATURES])[:, 1]
-    c["ann_prob"] = M["ann"].predict_proba(c)
-    return c
-
-
-SCORES = customer_scores()
 
 
 @app.route("/")
 def index():
     return render_template("index.html")
+
+
+@app.route("/sales-forecast")
+def sales_forecast_page():
+    return render_template("sales-forecast.html")
+
+
+@app.route("/sentiment")
+def sentiment_page():
+    return render_template("sentiment.html")
+
+
+@app.route("/recommendations")
+def recommendations_page():
+    return render_template("recommendations.html")
+
+
+@app.route("/purchase-likelihood")
+def purchase_likelihood_page():
+    return render_template("purchase-likelihood.html")
+
+
+@app.route("/promo-response")
+def promo_response_page():
+    return render_template("promo-response.html")
+
+
+@app.route("/purchase-probability")
+def purchase_probability_page():
+    return render_template("purchase-probability.html")
 
 
 @app.route("/api/dashboard")

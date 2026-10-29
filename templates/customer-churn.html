@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Customer Churn Risk (SVM)</h2>
+<form id="form" class="card form">
+  <label>Days Since Last Purchase<input name="days" type="number" value="30"></label>
+  <label>Support Tickets Opened<input name="tickets" type="number" value="1"></label>
+  <label>Total Spend ($)<input name="spend" type="number" value="500"></label>
+  <button type="submit">Assess</button>
+</form>
+<div id="out" class="card output"></div>
+<script>initForm('/api/predict/svm-churn');</script>
+{% endblock %}

@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Promo Response · ShopSmart Analytics{% endblock %}
+{% block content %}
+<div class="tool-page">
+  <div class="section-head">
+    <div>
+      <span class="eyebrow">Decision Tree</span>
+      <h1>Promo response</h1>
+      <p class="muted">Predict whether a customer will respond to a promotion and see the rules behind the decision.</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <form id="prForm" class="form">
+      <label>Age<input type="number" min="18" max="100" step="1" name="age" value="26"></label>
+      <label>Income ($)<input type="number" min="0" step="1000" name="income" value="32000"></label>
+      <label>Email open rate (0–1)<input type="number" min="0" max="1" step="0.01" name="email_open_rate" value="0.6"></label>
+      <label>Used coupon before<select name="used_coupon_before"><option value="1">Yes (1)</option><option value="0">No (0)</option></select></label>
+      <label>Days since last visit<input type="number" min="0" step="1" name="days_since_last_visit" value="6"></label>
+      <label>Past purchases<input type="number" min="0" step="1" name="past_purchases" value="3"></label>
+      <label>Months as customer<input type="number" min="0" step="1" name="tenure_months" value="10"></label>
+      <button type="submit" id="prSubmit" class="form-submit">Predict response</button>
+    </form>
+    <div id="prStatus" class="status"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <div>
+        <h2>Prediction &amp; decision path</h2>
+        <p class="small muted">Rules are listed in the order the tree evaluated them.</p>
+      </div>
+    </div>
+    <div id="prResult" class="result"></div>
+  </div>
+</div>
+{% endblock %}

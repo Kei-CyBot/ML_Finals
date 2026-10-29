@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}Recommendations · ShopSmart Analytics{% endblock %}
+{% block content %}
+<div class="tool-page">
+  <div class="section-head">
+    <div>
+      <span class="eyebrow">K-Nearest Neighbors</span>
+      <h1>Product recommendations</h1>
+      <p class="muted">Find products for a customer using similar shoppers, then compare products with a cosine similarity search.</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="controls">
+      <label>Customer<select id="recCustomer"></select></label>
+    </div>
+    <div id="recStatus" class="status"></div>
+
+    <div class="grid-3">
+      <div class="panel">
+        <div class="panel-head"><h2>Top rated items</h2></div>
+        <div id="recRated" class="chips"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><h2>Top 5 recommendations</h2></div>
+        <ul id="recRecommendations" class="rec-list"></ul>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><h2>Similar customers</h2></div>
+        <div id="recNeighbors" class="chips"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <div>
+        <h2>Similar products</h2>
+        <p class="small muted">Pick a product to find the closest catalogue matches.</p>
+      </div>
+    </div>
+    <div class="controls">
+      <label>Product<select id="recProduct"></select></label>
+    </div>
+    <div id="simStatus" class="status"></div>
+    <ul id="recSimilar" class="rec-list"></ul>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,8 @@
+{
+  "$schema": "https://app.kilo.ai/config.json",
+  "instructions": [
+    ".kilo/steering/caveman.md",
+    ".kilo/rules/ponytail.md",
+    ".kilo/rules/superpowers.md"
+  ]
+}

@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Purchase Likelihood · ShopSmart Analytics{% endblock %}
+{% block content %}
+<div class="tool-page">
+  <div class="section-head">
+    <div>
+      <span class="eyebrow">Support Vector Machine</span>
+      <h1>Purchase likelihood</h1>
+      <p class="muted">Score a customer's likelihood to purchase from their profile and recent shopping behavior.</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <form id="plForm" class="form">
+      <label>Age<input type="number" min="18" max="100" step="1" name="age" value="29"></label>
+      <label>Income ($)<input type="number" min="0" step="1000" name="income" value="52000"></label>
+      <label>Months as customer<input type="number" min="0" step="1" name="tenure_months" value="14"></label>
+      <label>Past purchases<input type="number" min="0" step="1" name="past_purchases" value="6"></label>
+      <label>Visits / month<input type="number" min="0" step="1" name="sessions_per_month" value="9"></label>
+      <label>Cart adds<input type="number" min="0" step="1" name="cart_adds" value="3"></label>
+      <label>Days since last visit<input type="number" min="0" step="1" name="days_since_last_visit" value="4"></label>
+      <button type="submit" id="plSubmit" class="form-submit">Predict likelihood</button>
+    </form>
+    <div id="plStatus" class="status"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <div>
+        <h2>Prediction</h2>
+        <p class="small muted">The decision margin is the signed distance from the SVM boundary.</p>
+      </div>
+    </div>
+    <div id="plResult" class="result"></div>
+  </div>
+</div>
+{% endblock %}

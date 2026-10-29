@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Purchase Probability · ShopSmart Analytics{% endblock %}
+{% block content %}
+<div class="tool-page">
+  <div class="section-head">
+    <div>
+      <span class="eyebrow">Neural Network</span>
+      <h1>Purchase probability</h1>
+      <p class="muted">Estimate conversion probability from browsing and engagement signals, then read the intent label.</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <form id="cpForm" class="form">
+      <label>Visits / month<input type="number" min="0" step="1" name="sessions_per_month" value="8"></label>
+      <label>Avg minutes / visit<input type="number" min="0" step="0.1" name="avg_session_min" value="9"></label>
+      <label>Pages / visit<input type="number" min="0" step="0.1" name="pages_per_session" value="7"></label>
+      <label>Cart adds<input type="number" min="0" step="1" name="cart_adds" value="3"></label>
+      <label>Wishlist items<input type="number" min="0" step="1" name="wishlist_items" value="2"></label>
+      <label>Days since last visit<input type="number" min="0" step="1" name="days_since_last_visit" value="3"></label>
+      <label>Past purchases<input type="number" min="0" step="1" name="past_purchases" value="4"></label>
+      <label>Email open rate (0–1)<input type="number" min="0" max="1" step="0.01" name="email_open_rate" value="0.4"></label>
+      <button type="submit" id="cpSubmit" class="form-submit">Predict probability</button>
+    </form>
+    <div id="cpStatus" class="status"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <div>
+        <h2>Conversion probability</h2>
+        <p class="small muted">The bar shows predicted purchase probability; the label summarizes intent.</p>
+      </div>
+    </div>
+    <div id="cpResult" class="result"></div>
+  </div>
+</div>
+{% endblock %}

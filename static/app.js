@@ -1,5 +1,6 @@
 // ShopSmart Analytics - dashboard front end
 const $ = (id) => document.getElementById(id);
+const has = (...ids) => ids.every((id) => $(id));
 const css = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
 const money = (v) => "$" + Math.round(v).toLocaleString();
 const pct = (v) => (v * 100).toFixed(1) + "%";
@@ -13,8 +14,29 @@ async function api(url, body) {
   return res.json();
 }
 
+function setBusy(button, busy, busyText, idleText) {
+  if (!button) return;
+  button.disabled = busy;
+  button.textContent = busy ? busyText : idleText;
+}
+
+function setLoading(id, message) {
+  const el = $(id);
+  if (!el) return;
+  el.className = "status";
+  el.innerHTML = `<span class="spinner"></span>${message}`;
+}
+
+function setMessage(id, message, state = "") {
+  const el = $(id);
+  if (!el) return;
+  el.className = "status" + (state ? " " + state : "");
+  el.textContent = message;
+}
+
 // ---------- Chart.js defaults (recessive grid/axes, thin marks) ----------
 function themeCharts() {
+  if (typeof Chart === "undefined") return;
   Chart.defaults.font.family = 'system-ui, -apple-system, "Segoe UI", sans-serif';
   Chart.defaults.font.size = 12;
   Chart.defaults.color = css("--muted");
@@ -27,8 +49,10 @@ function themeCharts() {
 }
 
 function draw(id, config) {
+  const el = $(id);
+  if (!el) return;
   if (charts[id]) charts[id].destroy();
-  charts[id] = new Chart($(id), config);
+  charts[id] = new Chart(el, config);
 }
 
 // history (solid) + forecast (dashed) line chart
@@ -61,6 +85,7 @@ function lineForecast(id, labels, hist, fut, fmt) {
 
 // ---------- KPIs ----------
 function renderKpis(k, revenue) {
+  if (!has("k-rev", "k-next", "k-delta", "k-pos", "k-buy", "k-buy-sub", "k-promo", "k-promo-sub", "k-ann")) return;
   $("k-rev").textContent = money(k.revenue_last_month);
   $("k-next").textContent = money(k.revenue_next_month);
   const d = (k.revenue_next_month - k.revenue_last_month) / k.revenue_last_month;
@@ -74,13 +99,28 @@ function renderKpis(k, revenue) {
   $("k-ann").textContent = k.avg_purchase_prob + "%";
 }
 
+// ---------- landing-page summary ----------
+function renderHero(k, metrics) {
+  if (!has("hero-rev", "hero-customers", "hero-sentiment", "hero-accuracy")) return;
+  $("hero-rev").textContent = money(k.revenue_last_month);
+  $("hero-customers").textContent = k.customers.toLocaleString();
+  $("hero-sentiment").textContent = k.positive_review_pct + "%";
+  const accuracies = Object.values(metrics)
+    .map((m) => m.accuracy)
+    .filter((v) => typeof v === "number");
+  const average = accuracies.reduce((sum, v) => sum + v, 0) / (accuracies.length || 1);
+  $("hero-accuracy").textContent = pct(average);
+}
+
 // ---------- 1. Linear Regression ----------
 function renderRevenue(r) {
+  if (!has("revChart")) return;
   const labels = [...r.history.map((h) => h.month), ...r.forecast.map((f) => f.month)];
   lineForecast("revChart", labels, r.history.map((h) => h.revenue), r.forecast.map((f) => f.revenue), money);
 }
 
 async function loadForecast() {
+  if (!has("productSel", "spendRange")) return;
   const pid = $("productSel").value;
   const spend = $("spendRange").value;
   const f = await api(`/api/forecast/${pid}?ad_spend=${spend}`);
@@ -88,18 +128,23 @@ async function loadForecast() {
   lineForecast("unitChart", labels, f.history.map((h) => h.units), f.forecast.map((x) => x.units),
     (v) => Math.round(v).toLocaleString());
   const total = f.forecast.reduce((s, x) => s + x.units, 0);
-  $("forecastTable").innerHTML =
-    `<tr><th>Month</th>${f.forecast.map((x) => `<th>${x.month}</th>`).join("")}</tr>` +
-    `<tr><td>Units</td>${f.forecast.map((x) => `<td>${x.units}</td>`).join("")}</tr>` +
-    `<tr><td>Revenue</td>${f.forecast.map((x) => `<td>${money(x.revenue)}</td>`).join("")}</tr>`;
+  if ($("forecastTable")) {
+    $("forecastTable").innerHTML =
+      `<tr><th>Month</th>${f.forecast.map((x) => `<th>${x.month}</th>`).join("")}</tr>` +
+      `<tr><td>Units</td>${f.forecast.map((x) => `<td>${x.units}</td>`).join("")}</tr>` +
+      `<tr><td>Revenue</td>${f.forecast.map((x) => `<td>${money(x.revenue)}</td>`).join("")}</tr>`;
+  }
   const c = f.coefficients;
-  $("coefText").textContent =
-    `Stock tip: plan ~${total.toLocaleString()} units for the next 6 months. ` +
-    `Model: +${c.t} units/month trend, +${c.holiday} in Nov–Dec, +${(c.ad_spend * 1000).toFixed(1)} units per $1,000 ads.`;
+  if ($("coefText")) {
+    $("coefText").textContent =
+      `Stock tip: plan ~${total.toLocaleString()} units for the next 6 months. ` +
+      `Model: +${c.t} units/month trend, +${c.holiday} in Nov–Dec, +${(c.ad_spend * 1000).toFixed(1)} units per $1,000 ads.`;
+  }
 }
 
 // ---------- 2. Naive Bayes ----------
 function renderReviews(rv) {
+  if (!has("sentChart", "posWords", "negWords", "recentReviews")) return;
   const cats = rv.by_category;
   const gap = css("--surface");
   draw("sentChart", {
@@ -129,6 +174,7 @@ function renderReviews(rv) {
 }
 
 async function classifyReview() {
+  if (!has("reviewText", "reviewResult")) return;
   const r = await api("/api/review", { text: $("reviewText").value });
   if (r.error) { $("reviewResult").textContent = r.error; return; }
   const good = r.label === "positive";
@@ -143,6 +189,7 @@ const productLine = (p, extra) =>
   `<li><b>${p.name}</b> <span class="meta">· ${p.category} · $${p.price.toFixed(2)}${extra ? " · " + extra : ""}</span></li>`;
 
 async function loadRecs() {
+  if (!has("customerSel", "ratedList", "recList", "neighList")) return;
   const r = await api(`/api/recommend/${$("customerSel").value}`);
   $("ratedList").innerHTML = r.rated.map((p) => `<span class="chip">${p.name} ${"★".repeat(p.rating)}</span>`).join("");
   $("recList").innerHTML = r.recommendations.map((p) => productLine(p, `predicted rating ${p.score}`)).join("");
@@ -151,28 +198,34 @@ async function loadRecs() {
 }
 
 async function loadSimilar() {
+  if (!has("simProductSel", "simList")) return;
   const s = await api(`/api/similar/${$("simProductSel").value}`);
   $("simList").innerHTML = s.map((p) => productLine(p, `${(p.similarity * 100).toFixed(0)}% similar`)).join("");
 }
 
 // ---------- 4-6. SVM / Decision Tree / ANN forms ----------
+const showSvm = (r) => `<div class="verdict ${r.will_purchase ? "yes" : "no"}">${r.will_purchase ? "✔" : "✖"} ${r.label}</div>
+                        <div class="small muted">Distance from SVM boundary: ${r.margin}</div>`;
+const showTree = (r) => `<div class="verdict ${r.will_respond ? "yes" : "no"}">${r.will_respond ? "✔ Send the promotion" : "✖ Unlikely to respond"}</div>
+                         <div class="small muted">Response probability ${pct(r.probability)}</div>
+                         <ol class="steps">${r.path.map((s) => `<li>${s}</li>`).join("")}</ol>`;
+const showAnn = (r) => `<div class="verdict">${pct(r.probability)} · ${r.label}</div>
+                        <div class="meter lg"><div style="width:${r.probability * 100}%"></div></div>`;
+
 const FORMS = {
   svmForm: {
     url: "/api/predict/svm", out: "svmResult",
     fields: [["age", "Age", 29], ["income", "Income ($)", 52000], ["tenure_months", "Months as customer", 14],
              ["past_purchases", "Past purchases", 6], ["sessions_per_month", "Visits / month", 9],
              ["cart_adds", "Cart adds", 3], ["days_since_last_visit", "Days since visit", 4]],
-    show: (r) => `<div class="verdict ${r.will_purchase ? "yes" : "no"}">${r.will_purchase ? "✔" : "✖"} ${r.label}</div>
-                  <div class="small muted">Distance from SVM boundary: ${r.margin}</div>`,
+    show: showSvm,
   },
   treeForm: {
     url: "/api/predict/tree", out: "treeResult",
     fields: [["age", "Age", 26], ["income", "Income ($)", 32000], ["email_open_rate", "Email open rate (0–1)", 0.6],
              ["used_coupon_before", "Used coupon (0/1)", 1], ["days_since_last_visit", "Days since visit", 6],
              ["past_purchases", "Past purchases", 3], ["tenure_months", "Months as customer", 10]],
-    show: (r) => `<div class="verdict ${r.will_respond ? "yes" : "no"}">${r.will_respond ? "✔ Send the promotion" : "✖ Unlikely to respond"}</div>
-                  <div class="small muted">Response probability ${pct(r.probability)}</div>
-                  <ol class="steps">${r.path.map((s) => `<li>${s}</li>`).join("")}</ol>`,
+    show: showTree,
   },
   annForm: {
     url: "/api/predict/ann", out: "annResult",
@@ -180,16 +233,17 @@ const FORMS = {
              ["pages_per_session", "Pages / visit", 7], ["cart_adds", "Cart adds", 3],
              ["wishlist_items", "Wishlist items", 2], ["days_since_last_visit", "Days since visit", 3],
              ["past_purchases", "Past purchases", 4], ["email_open_rate", "Email open rate (0–1)", 0.4]],
-    show: (r) => `<div class="verdict">${pct(r.probability)} · ${r.label}</div>
-                  <div class="meter"><div style="width:${r.probability * 100}%"></div></div>`,
+    show: showAnn,
   },
 };
 
 function buildForms() {
   for (const [id, f] of Object.entries(FORMS)) {
-    $(id).innerHTML = f.fields.map(([k, label, v]) =>
+    const form = $(id);
+    if (!form) continue;
+    form.innerHTML = f.fields.map(([k, label, v]) =>
       `<label>${label}<input type="number" step="any" name="${k}" value="${v}"></label>`).join("");
-    $(id).addEventListener("submit", (e) => { e.preventDefault(); submitForm(id); });
+    form.addEventListener("submit", (e) => { e.preventDefault(); submitForm(id); });
   }
   document.querySelectorAll("button[data-form]").forEach((b) =>
     b.addEventListener("click", () => submitForm(b.dataset.form)));
@@ -197,11 +251,15 @@ function buildForms() {
 
 async function submitForm(id) {
   const f = FORMS[id];
-  const body = Object.fromEntries([...new FormData($(id))].map(([k, v]) => [k, Number(v)]));
-  $(f.out).innerHTML = f.show(await api(f.url, body));
+  const form = $(id);
+  const out = f && $(f.out);
+  if (!form || !out) return;
+  const body = Object.fromEntries([...new FormData(form)].map(([k, v]) => [k, Number(v)]));
+  out.innerHTML = f.show(await api(f.url, body));
 }
 
 function renderInsights(d) {
+  if (!has("impChart", "treeRules", "annChart", "topTable")) return;
   const imp = d.tree.importances;
   draw("impChart", {
     type: "bar",
@@ -234,6 +292,7 @@ function renderInsights(d) {
 }
 
 function renderMetrics(m) {
+  if (!has("metricTable")) return;
   const cols = ["accuracy", "precision", "recall", "f1", "roc_auc"];
   const purpose = {
     "Linear Regression": "Predict future product sales",
@@ -255,10 +314,190 @@ function renderMetrics(m) {
   $("metricTable").innerHTML = html;
 }
 
+// ---------- tool pages ----------
+async function loadSalesForecast() {
+  if (!has("sfProduct", "sfAdSpend", "sfSubmit", "sfChart", "sfStatus", "sfCoefficients")) return;
+  const pid = $("sfProduct").value;
+  if (!pid) return;
+  const spend = $("sfAdSpend").value || "0";
+  setBusy($("sfSubmit"), true, "Forecasting…", "Run forecast");
+  setLoading("sfStatus", "Running regression forecast…");
+  try {
+    const f = await api(`/api/forecast/${pid}?ad_spend=${encodeURIComponent(spend)}`);
+    if (f.error) throw new Error(f.error);
+    const labels = [...f.history.map((h) => h.month), ...f.forecast.map((x) => x.month)];
+    lineForecast("sfChart", labels, f.history.map((h) => h.units), f.forecast.map((x) => x.units),
+      (v) => Math.round(v).toLocaleString());
+    const c = f.coefficients;
+    const signed = (v) => (Number(v) >= 0 ? "+" : "") + v;
+    $("sfCoefficients").innerHTML = [
+      `<span class="chip">Trend ${signed(c.t)} units / month</span>`,
+      `<span class="chip">Holiday ${signed(c.holiday)} units</span>`,
+      `<span class="chip">Mid-year ${signed(c.midyear)} units</span>`,
+      `<span class="chip">Ads ${signed((c.ad_spend * 1000).toFixed(1))} units / $1,000</span>`,
+    ].join("");
+    const total = f.forecast.reduce((sum, x) => sum + x.units, 0);
+    setMessage("sfStatus", `Forecast ready: ~${Math.round(total).toLocaleString()} units over ${f.forecast.length} months.`, "success");
+  } catch (e) {
+    setMessage("sfStatus", e.message || "Forecast failed.", "error");
+  } finally {
+    setBusy($("sfSubmit"), false, "Forecasting…", "Run forecast");
+  }
+}
+
+async function initSalesForecast() {
+  if (!has("sfForm", "sfProduct", "sfAdSpend", "sfSubmit", "sfChart", "sfStatus", "sfCoefficients")) return;
+  $("sfForm").addEventListener("submit", (e) => { e.preventDefault(); loadSalesForecast(); });
+  themeCharts();
+  setLoading("sfStatus", "Loading products…");
+  try {
+    const data = await api("/api/dashboard");
+    $("sfProduct").innerHTML = data.products.map((p) =>
+      `<option value="${p.product_id}">${p.name} (${p.category})</option>`).join("");
+    await loadSalesForecast();
+  } catch (e) {
+    setMessage("sfStatus", "Could not load products.", "error");
+  }
+}
+
+async function classifyToolReview() {
+  if (!has("sentText", "sentSubmit", "sentResult", "sentStatus")) return;
+  const text = $("sentText").value.trim();
+  if (!text) { setMessage("sentStatus", "Type a review first.", "error"); return; }
+  setBusy($("sentSubmit"), true, "Classifying…", "Classify review");
+  setLoading("sentStatus", "Scoring review text…");
+  try {
+    const r = await api("/api/review", { text });
+    if (r.error) throw new Error(r.error);
+    const good = r.label === "positive";
+    const row = (label, value) => {
+      const width = Math.max(0, Math.min(100, value * 100));
+      return `<div class="prob-row"><span>${label}</span><div class="prob-track"><div class="prob-fill ${label === "negative" ? "negative" : ""}" style="width:${width}%"></div></div><span>${pct(value)}</span></div>`;
+    };
+    $("sentResult").innerHTML = `
+      <div class="verdict ${good ? "yes" : "no"}">${good ? "Positive" : "Negative"} review</div>
+      <div class="small muted">Confidence ${pct(r.confidence)}</div>
+      <div class="prob-list">${row("positive", r.probabilities.positive)}${row("negative", r.probabilities.negative)}</div>`;
+    setMessage("sentStatus", "Classification complete.", "success");
+  } catch (e) {
+    $("sentResult").innerHTML = "";
+    setMessage("sentStatus", e.message || "Classification failed.", "error");
+  } finally {
+    setBusy($("sentSubmit"), false, "Classifying…", "Classify review");
+  }
+}
+
+function initSentiment() {
+  if (!has("sentForm", "sentText", "sentSubmit", "sentResult", "sentStatus")) return;
+  $("sentForm").addEventListener("submit", (e) => { e.preventDefault(); classifyToolReview(); });
+}
+
+async function loadToolRecommendations() {
+  if (!has("recCustomer", "recRated", "recRecommendations", "recNeighbors", "recStatus")) return;
+  const cid = $("recCustomer").value;
+  if (!cid) return;
+  setLoading("recStatus", `Finding products for customer #${cid}…`);
+  try {
+    const r = await api(`/api/recommend/${cid}`);
+    if (r.error) throw new Error(r.error);
+    $("recRated").innerHTML = r.rated.map((p) =>
+      `<span class="chip">${p.name} ${"★".repeat(p.rating)}</span>`).join("");
+    $("recRecommendations").innerHTML = r.recommendations.map((p) =>
+      productLine(p, `predicted rating ${p.score}`)).join("");
+    $("recNeighbors").innerHTML = r.neighbors.map((n) =>
+      `<span class="chip">#${n.customer_id} · ${(n.similarity * 100).toFixed(0)}% similar</span>`).join("");
+    setMessage("recStatus", `Recommendations ready for customer #${cid}.`, "success");
+  } catch (e) {
+    setMessage("recStatus", e.message || "Recommendation failed.", "error");
+  }
+}
+
+async function loadToolSimilar() {
+  if (!has("recProduct", "recSimilar", "simStatus")) return;
+  const pid = $("recProduct").value;
+  if (!pid) return;
+  setLoading("simStatus", "Finding similar products…");
+  try {
+    const s = await api(`/api/similar/${pid}`);
+    if (s.error) throw new Error(s.error);
+    $("recSimilar").innerHTML = s.map((p) =>
+      productLine(p, `${(p.similarity * 100).toFixed(0)}% similar`)).join("");
+    setMessage("simStatus", `${s.length} similar products found.`, "success");
+  } catch (e) {
+    setMessage("simStatus", e.message || "Similarity search failed.", "error");
+  }
+}
+
+async function initRecommendations() {
+  if (!has("recCustomer", "recProduct", "recRated", "recRecommendations", "recNeighbors",
+           "recSimilar", "recStatus", "simStatus")) return;
+  setLoading("recStatus", "Loading customers…");
+  try {
+    const data = await api("/api/dashboard");
+    $("recCustomer").innerHTML = data.knn_customers.map((c) =>
+      `<option value="${c}">Customer #${c}</option>`).join("");
+    $("recProduct").innerHTML = data.products.map((p) =>
+      `<option value="${p.product_id}">${p.name} (${p.category})</option>`).join("");
+    $("recCustomer").addEventListener("change", loadToolRecommendations);
+    $("recProduct").addEventListener("change", loadToolSimilar);
+    await Promise.all([loadToolRecommendations(), loadToolSimilar()]);
+  } catch (e) {
+    setMessage("recStatus", "Could not load selectors.", "error");
+  }
+}
+
+async function submitPredictionForm(formId, url, resultId, statusId, buttonId, idleLabel, render) {
+  const form = $(formId);
+  const result = $(resultId);
+  if (!form || !result) return;
+  const button = $(buttonId);
+  const body = Object.fromEntries([...new FormData(form)].map(([k, v]) => [k, Number(v)]));
+  setBusy(button, true, "Working…", idleLabel);
+  setLoading(statusId, "Running model…");
+  try {
+    const r = await api(url, body);
+    if (r.error) throw new Error(r.error);
+    result.innerHTML = render(r);
+    setMessage(statusId, "Prediction complete.", "success");
+  } catch (e) {
+    result.innerHTML = "";
+    setMessage(statusId, e.message || "Prediction failed.", "error");
+  } finally {
+    setBusy(button, false, "Working…", idleLabel);
+  }
+}
+
+function initPurchaseLikelihood() {
+  if (!has("plForm", "plResult", "plStatus", "plSubmit")) return;
+  $("plForm").addEventListener("submit", (e) => {
+    e.preventDefault();
+    submitPredictionForm("plForm", "/api/predict/svm", "plResult", "plStatus", "plSubmit", "Predict likelihood", showSvm);
+  });
+}
+
+function initPromoResponse() {
+  if (!has("prForm", "prResult", "prStatus", "prSubmit")) return;
+  $("prForm").addEventListener("submit", (e) => {
+    e.preventDefault();
+    submitPredictionForm("prForm", "/api/predict/tree", "prResult", "prStatus", "prSubmit", "Predict response", showTree);
+  });
+}
+
+function initPurchaseProbability() {
+  if (!has("cpForm", "cpResult", "cpStatus", "cpSubmit")) return;
+  $("cpForm").addEventListener("submit", (e) => {
+    e.preventDefault();
+    submitPredictionForm("cpForm", "/api/predict/ann", "cpResult", "cpStatus", "cpSubmit", "Predict probability", showAnn);
+  });
+}
+
 // ---------- boot ----------
 async function init() {
+  if (!has("kpis", "revChart", "productSel", "spendRange", "spendVal",
+           "customerSel", "simProductSel", "reviewBtn")) return;
   themeCharts();
   DATA = await api("/api/dashboard");
+  renderHero(DATA.kpis, DATA.metrics);
   renderKpis(DATA.kpis, DATA.revenue);
   renderRevenue(DATA.revenue);
   renderReviews(DATA.reviews);
@@ -283,3 +522,9 @@ async function init() {
 }
 
 init();
+initSalesForecast();
+initSentiment();
+initRecommendations();
+initPurchaseLikelihood();
+initPromoResponse();
+initPurchaseProbability();

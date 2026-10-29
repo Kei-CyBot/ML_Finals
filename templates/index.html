@@ -1,31 +1,101 @@
-<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>ShopSmart Analytics</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-</head>
-<body>
-<header class="topbar">
-  <div class="brand">
-    <span class="logo">🛒</span>
-    <div>
-      <h1>ShopSmart Analytics</h1>
-      <p class="muted">Predict customer behavior · recommend products · manage inventory</p>
+{% extends "base.html" %}
+{% block title %}ShopSmart Analytics — Dashboard{% endblock %}
+{% block content %}
+
+<section class="hero">
+  <div class="hero-copy">
+    <span class="eyebrow">E-commerce intelligence</span>
+    <h1>Turn shopping data into revenue decisions.</h1>
+    <p class="hero-lede">
+      ShopSmart Analytics brings six machine-learning models into one workspace for forecasting,
+      sentiment analysis, recommendations, and customer intent.
+    </p>
+    <div class="hero-actions">
+      <a class="btn" href="#dashboard">Explore dashboard</a>
+      <a class="btn btn-secondary" href="#algorithms">Browse algorithms</a>
     </div>
   </div>
-  <nav>
-    <a href="#sales">Sales forecast</a>
-    <a href="#reviews">Reviews</a>
-    <a href="#recs">Recommendations</a>
-    <a href="#insights">Customer insights</a>
-    <a href="#models">Models</a>
-  </nav>
-</header>
+  <div class="hero-stats" aria-label="Key performance indicators">
+    <div class="stat-card">
+      <span class="stat-label">Revenue last month</span>
+      <span class="stat-value" id="hero-rev">–</span>
+      <span class="stat-note">Across all products</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-label">Active customers</span>
+      <span class="stat-value" id="hero-customers">–</span>
+      <span class="stat-note">Profiles in the dataset</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-label">Positive sentiment</span>
+      <span class="stat-value" id="hero-sentiment">–</span>
+      <span class="stat-note">Naive Bayes classification</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-label">Prediction accuracy</span>
+      <span class="stat-value" id="hero-accuracy">–</span>
+      <span class="stat-note">Average across classifiers</span>
+    </div>
+  </div>
+</section>
 
-<main>
+<section class="section" id="algorithms">
+  <div class="section-head">
+    <div>
+      <span class="eyebrow">Algorithm directory</span>
+      <h2>Six models, one analytics workspace</h2>
+      <p class="muted">Open a focused tool for each business question, or scroll down for the full executive dashboard.</p>
+    </div>
+  </div>
+  <div class="algo-grid">
+    <article class="algo-card">
+      <span class="algo-icon">LR</span>
+      <h3>Linear Regression</h3>
+      <p>Forecast product sales and revenue from trend, seasonality, and advertising spend.</p>
+      <a class="btn btn-sm" href="/sales-forecast">Launch tool</a>
+    </article>
+    <article class="algo-card">
+      <span class="algo-icon">NB</span>
+      <h3>Naive Bayes</h3>
+      <p>Classify customer reviews as positive or negative and surface the words that drive sentiment.</p>
+      <a class="btn btn-sm" href="/sentiment">Launch tool</a>
+    </article>
+    <article class="algo-card">
+      <span class="algo-icon">KNN</span>
+      <h3>K-Nearest Neighbors</h3>
+      <p>Recommend products from similar customers and find items that are frequently liked together.</p>
+      <a class="btn btn-sm" href="/recommendations">Launch tool</a>
+    </article>
+    <article class="algo-card">
+      <span class="algo-icon">SVM</span>
+      <h3>Support Vector Machine</h3>
+      <p>Estimate which customers are likely to purchase based on profile and shopping history.</p>
+      <a class="btn btn-sm" href="/purchase-likelihood">Launch tool</a>
+    </article>
+    <article class="algo-card">
+      <span class="algo-icon">DT</span>
+      <h3>Decision Tree</h3>
+      <p>Identify promotion responders with readable rules that marketing teams can act on.</p>
+      <a class="btn btn-sm" href="/promo-response">Launch tool</a>
+    </article>
+    <article class="algo-card">
+      <span class="algo-icon">ANN</span>
+      <h3>Artificial Neural Network</h3>
+      <p>Predict purchase probability from browsing behavior, cart activity, and engagement signals.</p>
+      <a class="btn btn-sm" href="/purchase-probability">Launch tool</a>
+    </article>
+  </div>
+</section>
+
+<div id="dashboard">
+  <div class="section-head">
+    <div>
+      <span class="eyebrow">Executive dashboard</span>
+      <h2>Live business snapshot</h2>
+      <p class="muted">Every chart below is powered by the trained models and refreshes with the dashboard payload.</p>
+    </div>
+  </div>
+
   <!-- KPI tiles -->
   <section class="kpis" id="kpis">
     <div class="tile"><span class="label">Revenue last month</span><span class="value" id="k-rev">–</span></div>
@@ -185,10 +255,6 @@
     </div>
     <div class="table-wrap"><table class="table" id="metricTable"></table></div>
   </section>
-</main>
+</div>
 
-<footer class="muted small">ShopSmart Analytics · sample data generated for demonstration · Flask + scikit-learn</footer>
-
-<script src="{{ url_for('static', filename='app.js') }}"></script>
-</body>
-</html>
+{% endblock %}

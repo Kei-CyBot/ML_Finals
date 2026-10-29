@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Review Sentiment · ShopSmart Analytics{% endblock %}
+{% block content %}
+<div class="tool-page">
+  <div class="section-head">
+    <div>
+      <span class="eyebrow">Naive Bayes</span>
+      <h1>Review sentiment</h1>
+      <p class="muted">Classify a customer review as positive or negative and inspect the model's probability split.</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <form id="sentForm">
+      <div class="controls" style="margin-bottom:0">
+        <label>Review text<textarea id="sentText" rows="5" placeholder="Paste a customer review here…"></textarea></label>
+      </div>
+      <div class="form-actions">
+        <button type="submit" id="sentSubmit">Classify review</button>
+      </div>
+    </form>
+    <div id="sentStatus" class="status"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <div>
+        <h2>Classification</h2>
+        <p class="small muted">The badge shows the predicted class; the bars show class probabilities.</p>
+      </div>
+    </div>
+    <div id="sentResult" class="result"></div>
+  </div>
+</div>
+{% endblock %}

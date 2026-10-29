@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Sales Forecast · ShopSmart Analytics{% endblock %}
+{% block content %}
+<div class="tool-page">
+  <div class="section-head">
+    <div>
+      <span class="eyebrow">Linear Regression</span>
+      <h1>Sales forecast</h1>
+      <p class="muted">Project the next six months of unit sales for a product and see how ad spend changes demand.</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <form id="sfForm" class="controls">
+      <label>Product<select id="sfProduct"></select></label>
+      <label>Ad spend ($)<input id="sfAdSpend" type="number" min="0" step="50" value="1750"></label>
+      <button type="submit" id="sfSubmit">Run forecast</button>
+    </form>
+    <div id="sfStatus" class="status"></div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <h2>Units: history &amp; forecast</h2>
+          <p class="small muted">Solid line is actual demand; dashed line is the model forecast.</p>
+        </div>
+        <span class="badge">6 months</span>
+      </div>
+      <div class="chart-box"><canvas id="sfChart"></canvas></div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <h2>Regression coefficients</h2>
+          <p class="small muted">How each factor shifts monthly unit sales.</p>
+        </div>
+      </div>
+      <div id="sfCoefficients" class="chips"></div>
+      <p class="small muted mt">Ad spend is shown per $1,000. Holiday and mid-year are seasonal lift estimates.</p>
+    </div>
+  </div>
+</div>
+{% endblock %}
